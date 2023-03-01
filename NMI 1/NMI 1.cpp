@@ -23,19 +23,35 @@ int GetIntCnt(const float& num) {
 	return cnt;
 }
 
-float NarrowTrunc(const float &num, const float &errNum) {//кількість десятків після коми
-	int cntNumbAftDec = GetNumCntDecimal(errNum);
+float TruncByNumb(const float &num, const int& cntAftDec) {
+	return (cntAftDec!=0)?
+		int(num * 10 * cntAftDec) / float(10 * cntAftDec):
+		num;
+}
+
+float NarrowTrunc(const float &num, const float &absoluteErr) {//кількість десятків після коми
+	int cntNumbAftDec = GetNumCntDecimal(absoluteErr);
 	float narrowTruncNum = num;
-	int cntCorrectNumbAftDec = ((errNum) < (0.5 / 10 * cntNumbAftDec)) ?//вірні знаки після коми
+	int cntCorrectNumbAftDec = ((absoluteErr) < (0.5 / 10 * cntNumbAftDec)) ?//вірні знаки після коми
 		cntNumbAftDec : 0/*всі числа сумнівні*/;
 
 	int cntCorrectInt = GetIntCnt(num);//чи вірні цілі числа
 		
 	if (cntCorrectInt)//якщо не нуль (коректна ціла частина)
-		return int(narrowTruncNum * 10 * cntCorrectNumbAftDec) / float(10 * cntCorrectNumbAftDec);
+		return TruncByNumb(narrowTruncNum, cntCorrectNumbAftDec);//int(narrowTruncNum * 10 * cntCorrectNumbAftDec) / float(10 * cntCorrectNumbAftDec);
 		/*(int)narrowTruncNum + cntCorrectNumbAftDec) << narrowTruncNum - (int)narrowTruncNum)*//*/(10*cntCorrectNumbAftDec)*/;
 	//від цілої ч. віднімаєм остачу поділену на колво існуючих елемів після коми
 	return ceil(num);
+}
+
+float BroadTruc(const float& num, const float& relativeErr) {
+	float AbsoluteErr = num * relativeErr / 100;
+	float allCorrectNumb = GetNumCntDecimal(relativeErr)+2;
+	if (AbsoluteErr < 10 / pow(10, allCorrectNumb))//похибка менш 0.01 при 3 знаках після коми у відносній
+		return TruncByNumb(num, allCorrectNumb - //округлюєм до вірниx знаків після коми, тому вірні перед віднімаєм
+			((int)num) ?
+			GetIntCnt(num) : 1);
+	else return AbsoluteErr;
 }
 
 int main(){
@@ -61,11 +77,13 @@ int main(){
 			//2)
 	const float floatNumb = 2.3165, numDeviations = 0.0042,
 		floatNumb1 = 0.34484, percentDeviations = 0.4;
-	const float floatNumbResul = trunc (floatNumb);
+	const float floatNumbResul = NarrowTrunc(floatNumb, numDeviations),
+		floatNumb1Result= BroadTruc(floatNumb1, percentDeviations);
 
 	printf("\n 2)Округлити сумнівні цифри числа, залишивши вірні знаки (у вузьклому/широкому розумінні):\n\ta) %g (+-%g);\n", floatNumb, numDeviations);
 	printf("\tb) %g, б=%g%%.\n", floatNumb1, percentDeviations);
-	printf("\ta) у вузькому розумінні округлюється до: %g\n", NarrowTrunc(floatNumb, numDeviations));
+	printf("\ta) у вузькому розумінні округлюється до: %g\n", floatNumbResul);
+	printf("\tb) у широкому розумінні округлюється до: %g\n", floatNumb1Result);
 	
 			//3)
 	const float floatNumb2 = 2.3445, floatNumb3 = 0.745;
